@@ -5,6 +5,7 @@ import http from 'http';
 import WebSocket from 'ws';
 import dotenv from 'dotenv';
 import path from 'path';
+import { pool } from './config/database.js';
 import { fileURLToPath } from 'url';
 
 // Untuk __dirname di ES Modules
@@ -275,21 +276,22 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ✅ DATABASE TEST ENDPOINT
+// ✅ DATABASE TEST ENDPOINT - UNTUK RAILWAY MYSQL
 app.get('/api/debug/db', async (req, res) => {
   try {
     const { pool } = await import('./config/database.js');
     const connection = await pool.promise().getConnection();
-    const [result] = await connection.execute('SELECT NOW() as time, DATABASE() as db, USER() as user');
+    const [result] = await connection.execute('SELECT NOW() as time, DATABASE() as db, USER() as user, @@hostname as hostname');
     connection.release();
     
     res.json({
       success: true,
-      message: 'Database connection successful!',
+      message: '✅ Connected to Railway MySQL!',
       data: result[0],
       environment: {
-        host: process.env.MYSQLHOST || process.env.DB_HOST,
-        database: process.env.MYSQLDATABASE || process.env.DB_NAME,
+        host: process.env.MYSQLHOST,
+        database: process.env.MYSQLDATABASE,
+        user: process.env.MYSQLUSER,
         node_env: process.env.NODE_ENV
       }
     });
@@ -297,7 +299,12 @@ app.get('/api/debug/db', async (req, res) => {
     console.error('Database test error:', error);
     res.status(500).json({
       success: false,
-      message: 'Database connection failed: ' + error.message
+      message: '❌ Railway MySQL connection failed: ' + error.message,
+      env_vars: {
+        MYSQLHOST: process.env.MYSQLHOST ? 'Set' : 'Not set',
+        MYSQLDATABASE: process.env.MYSQLDATABASE ? 'Set' : 'Not set',
+        MYSQLUSER: process.env.MYSQLUSER ? 'Set' : 'Not set'
+      }
     });
   }
 });
@@ -377,7 +384,7 @@ app.get('/api/debug/init-db', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Database tables created and sample data inserted!'
+      message: 'Database tables created on Railway MySQL!'
     });
   } catch (error) {
     console.error('Database init error:', error);

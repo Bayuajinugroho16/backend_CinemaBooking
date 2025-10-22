@@ -1,68 +1,61 @@
-const mysql = require('mysql2');
-require('dotenv').config();
+import mysql from 'mysql2';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Railway menggunakan MYSQLHOST, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE, MYSQLPORT
 const dbConfig = {
-  host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
-  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
-  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
-  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'cinema_booking',
-  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+  host: process.env.MYSQLHOST || 'localhost',
+  port: process.env.MYSQLPORT || 3306,
+  user: process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || '',
+  database: process.env.MYSQLDATABASE || 'cinema_booking',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0,
-  connectTimeout: 60000,
-  acquireTimeout: 60000,
-  timeout: 60000,
-  
-  // ✅ SSL Configuration untuk Railway Production
-  ssl: (process.env.MYSQLHOST || process.env.NODE_ENV === 'production') ? {
-    rejectUnauthorized: false
-  } : false,
-  
-  // ✅ Additional settings untuk stability
-  charset: 'utf8mb4',
-  multipleStatements: true
+  queueLimit: 0
 };
 
-// Create connection pool
 const pool = mysql.createPool(dbConfig);
+
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error('❌ Database connection failed:', err.message);
+    console.log('🔧 Database config:', {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      user: dbConfig.user,
+      database: dbConfig.database
+    });
+  } else {
+    console.log('✅ Connected to MySQL database on Railway');
+    console.log(`📊 Database: ${dbConfig.database}`);
+    connection.release();
+  }
+});
 
 // Enhanced connection test
 const testConnection = () => {
   pool.getConnection((err, connection) => {
     if (err) {
-      console.error('❌ Local database connection failed:', err.message);
-      console.log('💡 Tips: Pastikan MySQL berjalan di komputer ini');
-      console.log('💡 Tips: Coba jalankan: mysql -u root -p');
+      console.error('❌ Database connection failed:', err.message);
     } else {
-      console.log('✅ Connected to LOCAL MySQL database successfully!');
-      console.log('📊 Database: cinema_booking');
-      console.log('🌐 Host: localhost');
+      console.log('✅ Connected to MySQL database successfully!');
+      console.log(`📊 Database: ${dbConfig.database}`);
+      console.log(`🌐 Host: ${dbConfig.host}`);
       
-      // ✅ FIXED: Simple SQL query yang universal
+      // Simple SQL query
       connection.query('SELECT 1 + 1 AS test_result', (queryErr, results) => {
         if (queryErr) {
           console.error('❌ Query test failed:', queryErr.message);
-          console.log('💡 Using alternative test...');
-          
-          // Alternative test tanpa complex functions
-          connection.query('SELECT 1', (simpleErr, simpleResults) => {
-            if (simpleErr) {
-              console.error('❌ Even simple query failed:', simpleErr.message);
-            } else {
-              console.log('✅ Simple connection test successful');
-            }
-            connection.release();
-          });
         } else {
           console.log('✅ Database query test successful:', results[0].test_result);
-          connection.release();
         }
+        connection.release();
       });
     }
   });
 };
+
 // Handle connection errors
 pool.on('error', (err) => {
   console.error('💥 Database pool error:', err);
@@ -79,4 +72,5 @@ if (process.env.NODE_ENV !== 'test') {
   testConnection();
 }
 
-module.exports = { pool, testConnection };
+// ✅ ES MODULES EXPORT
+export { pool, testConnection };
