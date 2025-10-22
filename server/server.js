@@ -1,10 +1,23 @@
-const express = require('express');
-const cors = require('cors');
-const http = require('http');
-const WebSocket = require('ws');
-const authRoutes = require('./routes/auth');
+// ✅ BENAR - ES Modules Import
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import WebSocket from 'ws';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-require('dotenv').config();
+// Untuk __dirname di ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Import routes
+import authRoutes from './routes/auth.js';
+import movieRoutes from './routes/movies.js';
+import bookingRoutes from './routes/bookings.js';
+import notificationRoutes from './routes/notifications.js';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -192,19 +205,11 @@ global.broadcastSeatUpdate = function(showtimeId, seatData) {
   console.log(`📢 Broadcast seat update to ${sentCount} clients for showtime ${showtimeId}:`, seatData);
 };
 
-// ✅ LOAD ROUTES
-try {
-  const movieRoutes = require('./routes/movies');
-  const bookingRoutes = require('./routes/bookings');
-  const notificationRoutes = require('./routes/notifications'); // ✅ TAMBAHKAN INI
-  
-  app.use('/api/movies', movieRoutes);
-  app.use('/api/bookings', bookingRoutes);
-  app.use('/api/notifications', notificationRoutes); // ✅ TAMBAHKAN INI
-  console.log('✅ Routes loaded successfully');
-} catch (error) {
-  console.error('❌ Route loading failed:', error);
-}
+// ✅ LOAD ROUTES (sudah di-import di atas)
+app.use('/api/movies', movieRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
+console.log('✅ Routes loaded successfully');
 
 // Basic route
 app.get('/', (req, res) => {
@@ -251,7 +256,7 @@ app.get('/health', (req, res) => {
 // ✅ DATABASE TEST ENDPOINT
 app.get('/api/debug/db', async (req, res) => {
   try {
-    const { pool } = require('./config/database');
+    const { pool } = await import('./config/database.js');
     const connection = await pool.promise().getConnection();
     const [result] = await connection.execute('SELECT NOW() as time, DATABASE() as db, USER() as user');
     connection.release();
@@ -278,7 +283,7 @@ app.get('/api/debug/db', async (req, res) => {
 // ✅ INITIALIZE DATABASE TABLES
 app.get('/api/debug/init-db', async (req, res) => {
   try {
-    const { pool } = require('./config/database');
+    const { pool } = await import('./config/database.js');
     const connection = await pool.promise().getConnection();
     
     console.log('🗄️ Initializing database tables...');
@@ -363,7 +368,7 @@ app.get('/api/debug/init-db', async (req, res) => {
 
 app.get('/api/debug/users', async (req, res) => {
   try {
-    const { pool } = require('./config/database');
+    const { pool } = await import('./config/database.js');
     const connection = await pool.promise().getConnection();
     const [users] = await connection.execute('SELECT id, username, email, role FROM users');
     connection.release();
@@ -383,9 +388,9 @@ app.get('/api/debug/users', async (req, res) => {
 });
 
 // ✅ START SERVER YANG SAMA UNTUK BOTH HTTP & WEBSOCKET
-server.listen(PORT, () => {
-  console.log(`⚡ Server running on http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket available on ws://localhost:${PORT}/ws`);
+server.listen(PORT, HOST, () => {
+  console.log(`⚡ Server running on http://${HOST}:${PORT}`);
+  console.log(`🔌 WebSocket available on ws://${HOST}:${PORT}/ws`);
   console.log(`⏰ Started at: ${new Date().toLocaleTimeString()}`);
   
   // Debug: Show registered routes
@@ -406,3 +411,5 @@ server.listen(PORT, () => {
   console.log('   GET  /api/notifications/connected-clients');
   console.log('   POST /api/notifications/system/:template');
 });
+
+export default app;
