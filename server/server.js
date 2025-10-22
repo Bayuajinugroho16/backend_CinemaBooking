@@ -11,11 +11,33 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import routes
-const authRoutes = require('./routes/auth.js');
-const movieRoutes = require('./routes/movies.js');
-const bookingRoutes = require('./routes/bookings.js');
-const notificationRoutes = require('./routes/notifications.js');
+async function loadRoutes() {
+  try {
+    // Dynamic import untuk CommonJS modules
+    const authModule = await import('./routes/auth.js');
+    const movieModule = await import('./routes/movies.js');
+    const bookingModule = await import('./routes/bookings.js');
+    const notificationModule = await import('./routes/notifications.js');
+    
+    // Extract router (coba default dulu, lalu named)
+    const authRoutes = authModule.default || authModule;
+    const movieRoutes = movieModule.default || movieModule;
+    const bookingRoutes = bookingModule.default || bookingModule;
+    const notificationRoutes = notificationModule.default || notificationModule;
+    
+    // Use routes
+    app.use('/api/auth', authRoutes);
+    app.use('/api/movies', movieRoutes);
+    app.use('/api/bookings', bookingRoutes);
+    app.use('/api/notifications', notificationRoutes);
+    
+    console.log('✅ All routes loaded successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Route loading failed:', error);
+    return false;
+  }
+}
 
 dotenv.config();
 
