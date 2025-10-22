@@ -8,6 +8,22 @@ import path from 'path';
 import { pool } from './config/database.js';
 import { fileURLToPath } from 'url';
 
+
+
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+console.log('🚀 Starting server...');
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+app.use('/api/auth', authRoutes);
+
 // Untuk __dirname di ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,18 +56,10 @@ async function loadRoutes() {
   }
 }
 
-dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 5000;
 
-console.log('🚀 Starting server...');
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
-app.use('/api/auth', authRoutes);
+
 
 // ✅ BUAT HTTP SERVER DARI EXPRESS APP
 const server = http.createServer(app);
