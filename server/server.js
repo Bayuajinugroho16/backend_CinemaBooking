@@ -12,10 +12,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import routes
-import authRoutes from './routes/auth.js';
-import movieRoutes from './routes/movies.js';
-import bookingRoutes from './routes/bookings.js';
-import notificationRoutes from './routes/notifications.js';
+const authRoutes = require('./routes/auth.js');
+const movieRoutes = require('./routes/movies.js');
+const bookingRoutes = require('./routes/bookings.js');
+const notificationRoutes = require('./routes/notifications.js');
 
 dotenv.config();
 
